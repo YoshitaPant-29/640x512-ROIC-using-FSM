@@ -1,0 +1,91 @@
+module row_col_traversal (
+    input clk,
+    input rst,
+    output reg [639:0] col_enable, // 640 bits for 640 columns
+    output reg [511:0] row_enable  // 512 bits for 512 rows
+);
+
+    // FSM states
+    typedef enum logic [1:0] {
+        IDLE,
+        ROW_SCAN,
+        NEXT_ROW,
+        DONE
+    } state_t;
+
+    state_t state, next_state;
+
+    // Counters (for FSM control, not enable generation)
+    reg [8:0] row_count; // For tracking rows
+    reg [9:0] col_count; // For tracking columns within a row
+
+    // Shift Registers
+    reg [639:0] col_shift_reg;
+    reg [511:0] row_shift_reg;
+    reg row_adv_flag;
+
+    // State transition
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            state <= IDLE;
+            row_count <= 0;
+            col_count <= 0;
+            col_shift_reg <= 640'b1; // Initialize with '1' at the beginning
+            row_shift_reg <= 512'b1; // Initialize with '1' at the beginning
+            col_enable <= 640'b0;
+            row_enable <= 512'b0;
+            row_adv_flag <= 1'b0;
+        end else begin
+            state <= next_state;
+
+            case (state)
+                IDLE: begin
+                    col_enable <= 640'b0;
+                    row_enable <= 512'b0;
+                    row_count <= 0;
+                    col_count <= 0;
+                    row_adv_flag <= 1'b0;
+                end
+
+                ROW_SCAN: begin
+                    col_enable <= col_shift_reg; // Output the shift register
+                    col_shift_reg <= {col_shift_reg[638:0], 1'b0}; // Shift the '1'
+                    if (col_count < 639) begin
+                        col_count <= col_count + 1;
+                    end else begin
+                        col_count <= 0;
+                        row_adv_flag <= 1'b1;
+                    end
+                end
+
+                NEXT_ROW: begin
+                    if (row_count < 511) begin
+                        row_enable <= row_shift_reg;
+                        row_shift_reg <= {row_shift_reg[510:0], 1'b0};
+                        row_count <= row_count + 1;
+                    end else begin
+                        state <= DONE;
+                    end
+                    row_adv_flag <= 1'b0;
+                end
+
+                DONE: begin
+                    col_enable <= 640'b0;
+                    row_enable <= 512'b0;
+                end
+            endcase
+        end
+    end
+
+    // FSM next-state logic
+    always @(*) begin
+        case (state)
+            IDLE:      next_state = ROW_SCAN;
+            ROW_SCAN:  next_state = (row_adv_flag) ? NEXT_ROW : ROW_SCAN;
+            NEXT_ROW:  next_state = (row_count < 511) ? ROW_SCAN : DONE;
+            DONE:      next_state = DONE;
+            default:   next_state = IDLE;
+        endcase
+    end
+
+endmodule

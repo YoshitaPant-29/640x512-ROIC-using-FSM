@@ -1,35 +1,38 @@
 // Code your testbench here
 // or browse Examples
-`timescale 1us/1ns  // 1 µs resolution
+`timescale 1ns / 1ps
 
-module tb_row_col_traversal;
+module tb_roic_shift_based;
 
-    reg clk, rst;
-    wire [8:0] col_enable;
-    wire [8:0] row_enable;
+    reg clk;
+    reg rst;
+    wire [639:0] col_enable;
+    wire [511:0] row_enable;
+    wire done;
 
-    row_col_traversal uut (
+    // Instantiate DUT
+    roic_shift_based uut (
         .clk(clk),
         .rst(rst),
         .col_enable(col_enable),
-        .row_enable(row_enable)
+        .row_enable(row_enable),
+        .done(done)
     );
 
-    // Generate 1 MHz clock (1 µs period)
-    always #0.5 clk = ~clk;
+    // 10 MHz Clock → 100 ns period
+    always #50 clk = ~clk;
 
     initial begin
-        // VCD waveform generation (for GTKWave or Cadence)
-        $dumpfile("waveform.vcd");
-        $dumpvars(0, tb_row_col_traversal);
+        $dumpfile("roic.vcd");
+        $dumpvars(0, uut);
 
         clk = 0;
         rst = 1;
-        #5;   // 5 µs reset
+        #200;
         rst = 0;
 
-        // Run for some time
-        #2000;  // Simulate 10 ms
+        // Enough time to process a few rows
+        #20000000;
         $finish;
     end
 

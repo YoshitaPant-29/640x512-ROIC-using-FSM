@@ -1,0 +1,91 @@
+# CONCEPT OVERVIEW:
+-->We are simulating How a Readout Integrated Circuit (ROIC) scans an image sensor of size 640 columns × 512 rows.
+
+###The goal is to:
+
+Enable 1 row at a time
+
+For each row, enable each of 640 columns one after another
+
+This mimics the way real infrared image sensors output pixel data
+
+This is done using:
+
+1.A Finite State Machine (FSM)
+2. Shift Registers to output 1-hot signals
+
+1. Inputs/Outputs:
+-->clk: 10 MHz clock signal (i.e., toggles every 100 ns)
+
+-->rst: resets the FSM and counters
+
+-->col_enable: a 640-bit bus where only 1 bit is HIGH at a time
+
+-->row_enable: a 512-bit bus where only 1 bit is HIGH for the current row
+
+2. FSM States:
+-->IDLE → ROW_ENABLE → COL_ENABLE → NEXT_ROW → DONE
+### State	Function:
+IDLE-Initializes the outputs and moves to start
+ROW_ENABLE-Sets the current row active (row_enable[i] = 1)
+COL_ENABLE-Shifts a ‘1’ through col_enable[0→639] on every clock cycle
+NEXT_ROW-When all 640 columns done, activate next row and restart column shifting
+DONE-After all 512 rows are done, FSM stops
+
+3. Registers:
+col_count: counts up to 639
+row_count: counts up to 511
+These are simple integer counters used to:
+-->Keep track of column position for each row
+-->Know when to move to the next row
+
+4. Shift Register Behavior:
+-->col_enable <= col_enable << 1;
+-->row_enable <= row_enable << 1;
+
+This shifts a ‘1’ left across the entire bit bus, creating a one-hot pattern, like:
+logic:
+000...0001
+000...0010
+000...0100
+...
+
+🧪 TESTBENCH EXPLAINED (tb_roic_shift_based)
+1. Setup:
+reg clk;
+reg rst;
+wire [639:0] col_enable;
+wire [511:0] row_enable;
+Declares all the signals needed to test the design.
+
+2. Clock Generation:
+always #50 clk = ~clk;
+This generates a 10 MHz clock, since each full cycle takes 100 ns (50 ns high, 50 ns low).
+
+3. Initial Block (Simulation Driver):
+initial begin
+  rst = 1;
+  #200; // hold reset for 200 ns
+  rst = 0;
+
+  #2000000; // simulate 2 ms of scanning
+  $finish;
+end
+Runs simulation for a short duration to observe a few row-column activations.
+
+4. Dump Waveform:
+$dumpfile("waveform.vcd");
+$dumpvars(0, uut.row_enable[0]);
+$dumpvars(0, uut.col_enable[0]);
+...
+Only dumps the first 2 bits of each enable signal to keep the VCD small and readable in GTKWave or any waveform viewer.
+
+### COMPONENTS USED IN THIS DESIGN
+Component	Purpose:
+FSM	--Controls the sequence of row and column activations
+Shift Register--	Used to generate 1-hot row_enable and col_enable outputs
+Counters--	Used to track row and column positions
+Clock Generator--	Provides timing signal (10 MHz)
+
+
+

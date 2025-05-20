@@ -1,0 +1,84 @@
+Design for 40x32:
+// Code your design here
+`timescale 1ns / 1ps
+
+module roic_shift_based_small (
+    input clk,
+    input rst,
+    output reg [39:0] col_enable,
+    output reg [31:0] row_enable,
+    output reg done
+);
+
+    typedef enum logic [2:0] {
+        IDLE = 3'd0,
+        ROW_ENABLE = 3'd1,
+        COL_ENABLE = 3'd2,
+        NEXT_ROW = 3'd3,
+        DONE = 3'd4
+    } state_t;
+
+    state_t state;
+
+    reg [5:0] col_count;  // up to 40
+    reg [5:0] row_count;  // up to 32
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            state <= IDLE;
+            col_enable <= 40'b0;
+            row_enable <= 32'b0;
+            col_count <= 0;
+            row_count <= 0;
+            done <= 0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    col_enable <= 40'b0;
+                    row_enable <= 32'b0;
+                    col_enable[0] <= 1'b1;
+                    row_enable[0] <= 1'b1;
+                    col_count <= 0;
+                    row_count <= 0;
+                    done <= 0;
+                    state <= ROW_ENABLE;
+                end
+
+                ROW_ENABLE: begin
+                    col_enable <= 40'b0;
+                    col_enable[0] <= 1'b1;
+                    col_count <= 0;
+                    state <= COL_ENABLE;
+                end
+
+                COL_ENABLE: begin
+                    if (col_count < 39) begin
+                        col_enable <= col_enable << 1;
+                        col_count <= col_count + 1;
+                    end else begin
+                        state <= NEXT_ROW;
+                    end
+                end
+
+                NEXT_ROW: begin
+                    if (row_count < 31) begin
+                        row_enable <= row_enable << 1;
+                        row_count <= row_count + 1;
+                        state <= ROW_ENABLE;
+                    end else begin
+                        state <= DONE;
+                    end
+                end
+
+                DONE: begin
+                    col_enable <= 0;
+                    row_enable <= 0;
+                    done <= 1'b1;
+                end
+
+                default: state <= IDLE;
+            endcase
+        end
+    end
+
+endmodule

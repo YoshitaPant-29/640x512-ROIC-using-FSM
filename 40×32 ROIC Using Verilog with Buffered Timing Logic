@@ -1,0 +1,104 @@
+`timescale 1ns / 1ps
+
+module roic_controller (
+    input clk,
+    input rst,
+    output reg [39:0] col_enable,
+    output reg [31:0] row_enable,
+    output reg done
+);
+
+    // FSM states
+    parameter IDLE            = 3'd0;
+    parameter COL_DELAY_BEFORE= 3'd1;
+    parameter COL_ENABLE      = 3'd2;
+    parameter COL_DELAY_AFTER = 3'd3;
+    parameter ROW_GAP         = 3'd4;
+    parameter NEXT_ROW        = 3'd5;
+    parameter DONE            = 3'd6;
+
+    reg [2:0] state;
+
+    reg [5:0] col_count;
+    reg [5:0] row_count;
+    reg [2:0] delay_count;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            state <= IDLE;
+            col_enable <= 40'b0;
+            row_enable <= 32'b0;
+            col_count <= 0;
+            row_count <= 0;
+            delay_count <= 0;
+            done <= 0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    row_enable[0] <= 1'b1;
+                    state <= COL_DELAY_BEFORE;
+                end
+
+                COL_DELAY_BEFORE: begin
+                    if (delay_count < 3) begin
+                        delay_count <= delay_count + 1;
+                    end else begin
+                        col_enable[0] <= 1'b1;
+                        col_count <= 0;
+                        delay_count <= 0;
+                        state <= COL_ENABLE;
+                    end
+                end
+
+                COL_ENABLE: begin
+                    if (col_count < 39) begin
+                        col_enable <= col_enable << 1;
+                        col_count <= col_count + 1;
+                    end else begin
+                        col_enable <= 0;
+                        state <= COL_DELAY_AFTER;
+                    end
+                end
+
+                COL_DELAY_AFTER: begin
+                    if (delay_count < 3) begin
+                        delay_count <= delay_count + 1;
+                    end else begin
+                        delay_count <= 0;
+                        row_enable <= 0;
+                        state <= ROW_GAP;
+                    end
+                end
+
+                ROW_GAP: begin
+                    if (delay_count < 3) begin
+                        delay_count <= delay_count + 1;
+                    end else begin
+                        delay_count <= 0;
+                        state <= NEXT_ROW;
+                    end
+                end
+
+                NEXT_ROW: begin
+                    if (row_count < 31) begin
+                        row_count <= row_count + 1;
+                        row_enable[row_count + 1] <= 1'b1;
+                        col_count <= 0;
+                        state <= COL_DELAY_BEFORE;
+                    end else begin
+                        state <= DONE;
+                    end
+                end
+
+                DONE: begin
+                    col_enable <= 0;
+                    row_enable <= 0;
+                    done <= 1;
+                end
+
+                default: state <= IDLE;
+            endcase
+        end
+    end
+
+endmodule

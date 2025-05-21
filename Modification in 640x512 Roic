@@ -3,24 +3,27 @@ Clock frequency = 10 MHz → each clock = 100 ns
 🧩 Modified Timing Constraints: 
 🟩 For Rows:
 Each row remains active for 648 clocks.
-
 After each row, leave 4 clock cycles of gap (buffer).
 
 ✅ Total time per row = 648 + 4 = 652 clocks
-
 🟦 For Columns:
 Leave 4 clocks idle before col[0] activates.
-
 Scan through all columns (as before).
-
 Leave 4 clocks idle after col[639].
 
 ✅ Total time for column enable = 4 (before) + 640 (scan) + 4 (after) = 648 clocks
-
 So the row enable stays HIGH for the entire 648 clocks, during which:
-
 4 idle clocks before column scan
-
 640 active column shifts
-
 4 idle clocks after column scan
+
+IDLE
+→ ROW_SETUP        (1 cycle or immediate)
+→ ROW_ACTIVE       (row_enable = 1)
+→ COL_DELAY_BEFORE (4 clocks)
+→ COL_ENABLE       (640 clocks)
+→ COL_DELAY_AFTER  (4 clocks)
+→ ROW_HOLD_OFF     (4 clocks gap between rows)
+→ NEXT_ROW
+→ (Repeat or DONE)
+

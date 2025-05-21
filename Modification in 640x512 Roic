@@ -1,6 +1,6 @@
 Clock frequency = 10 MHz → each clock = 100 ns
 
-🧩 Modified Timing Constraints:
+🧩 Modified Timing Constraints: 
 🟩 For Rows:
 Each row remains active for 648 clocks.
 

@@ -1,0 +1,37 @@
+// Code your testbench here
+// or browse Examples
+`timescale 1ns / 1ps
+
+module tb_roic_controller;
+
+    reg clk;
+    reg rst;
+    wire [39:0] col_enable;
+    wire [31:0] row_enable;
+    wire done;
+
+    roic_controller uut (
+        .clk(clk),
+        .rst(rst),
+        .col_enable(col_enable),
+        .row_enable(row_enable),
+        .done(done)
+    );
+
+    // 10 MHz clock = 100 ns period
+    always #50 clk = ~clk;
+
+    initial begin
+        $dumpfile("roic_controller.vcd");
+        $dumpvars(0, tb_roic_controller);
+
+        clk = 0;
+        rst = 1;
+        #200;
+        rst = 0;
+
+        #2000000;  // Let it run long enough
+        $finish;
+    end
+
+endmodule

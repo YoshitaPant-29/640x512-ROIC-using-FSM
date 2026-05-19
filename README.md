@@ -1,8 +1,6 @@
-# 640x512-ROIC-using-FSM
-
+## ROIC Digital Controller — 640×512 Infrared Image Sensor Readout
 <img width="855" height="546" alt="image" src="https://github.com/user-attachments/assets/04d561ad-0059-4ab8-952a-968fd2c5a85e" />
 
-## ROIC Digital Controller — 640×512 Infrared Image Sensor Readout
 A Verilog implementation of the digital readout controller for a 640×512 ROIC (Readout Integrated Circuit), designed to mimic how real infrared image sensors sequence pixel data output. Built and verified on EDA Playground using Icarus Verilog.
 
 ### What This Project Does

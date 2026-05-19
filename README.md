@@ -5,7 +5,7 @@
 ## ROIC Digital Controller — 640×512 Infrared Image Sensor Readout
 A Verilog implementation of the digital readout controller for a 640×512 ROIC (Readout Integrated Circuit), designed to mimic how real infrared image sensors sequence pixel data output. Built and verified on EDA Playground using Icarus Verilog.
 
-###What This Project Does
+### What This Project Does
 An infrared image sensor cannot output all 327,680 pixels at once. Instead, a digital controller activates one row at a time and scans through all 640 columns in that row before moving to the next. This project implements that controller using:
 
 A Finite State Machine (FSM) that controls the scan sequence
@@ -14,6 +14,7 @@ Integer counters that track position within the 640×512 grid
 A SystemVerilog testbench with scoreboard, assertions, and functional coverage
 
 ### System Architecture
+
 clk ──┐
 rst ──┤──► FSM Controller ──► Row Shift Register (512-bit) ──► row_enable[511:0]
       │         │
